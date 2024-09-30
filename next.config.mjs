@@ -1,5 +1,5 @@
 /** @type {import('next').NextConfig} */
-export const nextConfig = {
+ const nextConfig = {
     
     // Override the default webpack configuration
     webpack: (config) => {
@@ -12,3 +12,4 @@ export const nextConfig = {
         return config;
     },
 }
+export default nextConfig;

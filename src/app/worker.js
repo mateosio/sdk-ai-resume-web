@@ -33,9 +33,9 @@ self.addEventListener("message", async (event) => {
   if(typeof modelInstance === 'function'){
     let output = await modelInstance(event.data, {
       min_length: 70,
-      max_length: 150
+      max_length: 180
     });
-    console.log(output);
+    console.log("este es el resumen", output);
   
     // Send the output back to the main thread
     self.postMessage({

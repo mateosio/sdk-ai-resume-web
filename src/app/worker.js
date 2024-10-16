@@ -4,7 +4,7 @@ import { pipeline, env } from "@xenova/transformers";
 env.allowLocalModels = false;
 
 const task = "summarization";
-const model = "Xenova/t5-small";
+const model = "Xenova/bart-large-cnn";
 let instance = null;
 
 
@@ -12,14 +12,13 @@ let instance = null;
 const getInstance = async (progress_callback = null) => {
   if (instance === null) {
     instance = await pipeline(task, model, { progress_callback });
-    console.log("Modelo cargado exitosamente.", instance);
+    console.log("Modelo cargado exitosamente en worker.", instance);
   }
   return instance;
 };
 
 const resumeModelInstance = getInstance((progress) => {
-  // We also add a progress callback to the pipeline so that we can
-  // track model loading in the main thread.
+  // We also add a progress callback to the pipeline so that we can track model loading in the main thread.
   self.postMessage(progress);
 });
 
@@ -31,11 +30,8 @@ self.addEventListener("message", async (event) => {
   console.log("Llego el mensaje al web worker", event.data);
   const modelInstance = await resumeModelInstance;
   if(typeof modelInstance === 'function'){
-    let output = await modelInstance(event.data, {
-      min_length: 70,
-      max_length: 180
-    });
-    console.log("este es el resumen", output);
+    let output = await modelInstance(event.data);
+    console.log("este es el resumen en el worker", output);
   
     // Send the output back to the main thread
     self.postMessage({

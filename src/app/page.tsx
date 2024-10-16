@@ -3,11 +3,14 @@
 import { useState, useEffect, useRef } from "react";
 import { urlSchema } from "@/schemas/inputUrlSchema";
 import { scrapUrl } from "@/features/scrapUrl";
+import 'animate.css';
 
 export default function InputURL() {
   const [input, setInput] = useState("");
   const [error, setError] = useState<false | string>(false);
-  const [summary, setSummary] = useState(false);
+  const [summary, setSummary] = useState<false | string>(false);
+  const [modelComplete, setModelComplete] = useState(false);
+  const [messageComplete, setMessageModelComplete] = useState("Aguarda un instante, estamos preparando todo para ti..");
   const worker = useRef<Worker | null>(null);
 
   useEffect(() => {
@@ -16,7 +19,7 @@ export default function InputURL() {
           worker.current = new Worker(new URL('./worker.js', import.meta.url));
           
 
-          // Escuchar mensajes del Web Worker
+          // Listen message from Web Worker
           worker.current.onmessage = (event) => {
               if (event.data.status === 'complete') {
                 console.log("ingrese al complete del mensaje", event.data.output[0].summary_text);
@@ -24,6 +27,9 @@ export default function InputURL() {
                   setSummary(event.data.output[0].summary_text); 
               } else {
                   console.log("Progreso de carga del modelo: ", event.data);
+                  if (event.data.status === "ready"){
+                    setModelComplete(true);
+                  }
               }
           };
 
@@ -37,23 +43,42 @@ export default function InputURL() {
 
   const handleResume = async (e: React.FormEvent) => {
     e.preventDefault();
-        
+    setSummary("");
     const urlValidate = urlSchema.safeParse({inputUrl: input});
+    
     if(!urlValidate.success){
       console.log("invalid schema");
       
-      
       setError(urlValidate.error.errors[0].message);
+      setTimeout(()=>{
+        setError(false)
+      }, 2000);
       return;
     };
-    
+    // const generateText =  async (input : string)=>{
+    //   const response = await fetch('http://127.0.0.1:8000/generate', {
+    //     method: "POST",
+    //     headers: {
+    //       "Content-Type": "application/json"
+    //     },
+    //     body: JSON.stringify({prompt: input})
+    //   })
+    //   const data = await response.json();
+    //   return data.generated_text;
+    // }
+    // const text = await generateText("Que es la primavera?");
+    // setText(text);
+
     // Llamar a la funcion de scraping
+    console.log("no debería hacer scraping");
     const content = await scrapUrl(input);
+    
     if (worker.current) {
-      console.log("existe worker.current");
-         // Enviar texto al Web Worker para resumirlo
-         worker.current.postMessage(content);
-      }
+        console.log("existe worker.current");
+           // Enviar texto al Web Worker para resumirlo
+           worker.current.postMessage(content);
+        }
+      setInput("");
   };
 
  
@@ -62,13 +87,22 @@ export default function InputURL() {
       {summary && 
       <div>{summary}</div>
       }
+      {!modelComplete && 
+      <>
+      <div className="text-center">{messageComplete}</div>
+      <div className="flex justify-center mt-10">
+        <span className="loader"></span>
+      </div>
+      </>
+      }
 
+      {modelComplete && 
       <form onSubmit={handleResume}>
         <input
-          className="fixed bottom-0 w-full max-w-md p-2 mb-8 border border-gray-300 rounded shadow-xl"
+          className="animate__animated animate__bounceInUp fixed bottom-0 w-full max-w-md p-2 mb-8 border border-gray-300 rounded shadow-xl"
           value={input}
           onChange={(e)=>{setInput(e.target.value)}}
-          placeholder="Paste the url of the web you want resume..."
+          placeholder="Pega la URL de la web que queres resumir..."
           onKeyUp={(e)=>{
             if(e.key === "Enter"){
               handleResume(e)
@@ -77,7 +111,7 @@ export default function InputURL() {
          
         />
         {error && <p>{error}</p>}
-      </form>
+      </form>}
     </div>
   );
 }

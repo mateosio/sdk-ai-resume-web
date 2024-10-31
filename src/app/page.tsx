@@ -8,7 +8,7 @@ import { CohereClient } from "cohere-ai";
 import { Alert, Stack } from "@mui/material";
 
 const cohere = new CohereClient({
-  token: "L6A6PtskyBFUm0T8zBw3mKSmKVW4NWC5jXMqHe77",
+  token: process.env.NEXT_PUBLIC_COHERE_API_KEY,
 });
 
 export default function InputURL() {
@@ -57,8 +57,6 @@ export default function InputURL() {
   // }, []);
 useEffect(()=>{
   setTimeout(() => {
-    console.log("Se volvio a ejecutar el set Time out");
-    
     setWelcome(true)
   }, 1500);
 }, [])
